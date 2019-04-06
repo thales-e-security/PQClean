@@ -1,8 +1,11 @@
 import os
 from glob import glob
+import sys
 
 import pqclean
 from helpers import run_subprocess, ensure_available
+
+additional_flags = []
 
 
 def test_clang_tidy():
@@ -17,8 +20,9 @@ def check_tidy(implementation: pqclean.Implementation):
     common_files = glob(os.path.join('..', 'common', '*.c'))
     run_subprocess(['clang-tidy',
                     '-quiet',
-                    '-header-filter=.*',
-                    *cfiles,
+                    '-header-filter=.*'] +
+                     additional_flags +
+                    [*cfiles,
                     *common_files,
                     '--',
                     '-iquote', os.path.join('..', 'common'),
@@ -27,6 +31,10 @@ def check_tidy(implementation: pqclean.Implementation):
 
 
 if __name__ == "__main__":
+    # allow a user to specify --fix-errors, to immediately fix errors
+    if len(sys.argv) >= 2 and sys.argv[1] == '-fix-errors':
+        additional_flags = ['-fix-errors']
+        sys.argv = sys.argv[0:1] + sys.argv[2:]
     try:
         import nose2
         nose2.main()
